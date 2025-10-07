@@ -77,7 +77,7 @@ export function PDFUpload({
       formData.append('file', selectedFile);
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/upload_pdf`,
+        `http://localhost:8000/upload_pdf`,
         {
           method: 'POST',
           body: formData,

@@ -1,6 +1,6 @@
 import type { UploadResponse, QueryResponse, HealthResponse } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8000';
 
 export class APIError extends Error {
   constructor(public status: number, message: string) {
@@ -12,6 +12,7 @@ export class APIError extends Error {
 export const api = {
   async checkHealth(): Promise<HealthResponse> {
     const response = await fetch(`${API_BASE_URL}/health`);
+    console.log('Health check response:', response);
     if (!response.ok) {
       throw new APIError(response.status, 'Failed to connect to backend');
     }
@@ -53,7 +54,7 @@ export const api = {
   },
 
   async listDocuments(): Promise<Array<{ doc_id: string; filename: string }>> {
-    const response = await fetch(`${API_BASE_URL}/docs`);
+    const response = await fetch(`${API_BASE_URL}/documents`);
     if (!response.ok) {
       throw new APIError(response.status, 'Failed to fetch documents');
     }
