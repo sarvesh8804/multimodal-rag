@@ -1,12 +1,14 @@
 import { ArrowRight, Sparkles, Zap, Shield, FileText } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HomepageProps {
   onGetStarted: () => void;
 }
 
 export function Homepage({ onGetStarted }: HomepageProps) {
-  const { theme } = useTheme();
+  // useTheme is still available; we only need the toggle component here.
+  useTheme();
 
   return (
     <div className="min-h-screen overflow-hidden">
@@ -19,7 +21,10 @@ export function Homepage({ onGetStarted }: HomepageProps) {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-16 animate-slide-up">
+        <div className="text-center mb-16 animate-slide-up relative">
+          <div className="absolute top-0 right-0 mt-6 mr-6 z-20">
+            <ThemeToggle />
+          </div>
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 rounded-full border border-blue-500/20 dark:border-blue-400/20 mb-6">
             <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
