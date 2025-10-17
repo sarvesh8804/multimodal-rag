@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 import { PDFUpload } from './components/PDFUpload';
+import { PDFViewer } from './components/PDFViewer';
 import { ChatInterface } from './components/ChatInterface';
 import { ToastContainer } from './components/Toast';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -191,7 +192,7 @@ function App() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto flex flex-col p-6 gap-6 overflow-hidden">
+      <main className="flex-1 max-w-8xl w-full mx-auto flex flex-col p-6 gap-6 overflow-hidden">
         {!selectedDoc ? (
           <div className="flex-1 flex items-center justify-center">
             <PDFUpload
@@ -202,13 +203,26 @@ function App() {
             />
           </div>
         ) : (
-          <div className="flex-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
-            <ChatInterface
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              isLoading={isQuerying}
-              disabled={backendStatus === 'offline'}
-            />
+          // Two column layout: left = chat, right = pdf viewer (each 50%)
+          <div className="flex-1 flex flex-col md:flex-row gap-10 overflow-hidden">
+            {/* Left: Chat - match PDF viewer height so bottoms align */}
+            <div className="md:w-[58%] w-full h-[calc(100vh-8rem)] bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden border border-blue-200 dark:border-gray-700">
+              <ChatInterface
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                isLoading={isQuerying}
+                disabled={backendStatus === 'offline'}
+              />
+            </div>
+
+            {/* Right: PDF viewer (sticky) */}
+            <div className="md:w-[42%] w-full flex-shrink-0">
+              <div className="sticky top-20 h-[calc(100vh-8rem)] bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden border border-blue-200 dark:border-gray-700">
+                {selectedDoc && (
+                  <PDFViewer docId={selectedDoc.doc_id} filename={selectedDoc.filename} />
+                )}
+              </div>
+            </div>
           </div>
         )}
 
