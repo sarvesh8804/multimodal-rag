@@ -1,516 +1,3 @@
-# # backend.py
-# import os
-# import uuid
-# from fastapi import FastAPI, UploadFile, File, HTTPException
-# from fastapi.middleware.cors import CORSMiddleware
-# from pydantic import BaseModel
-# from typing import List, Dict, Any
-
-# from dotenv import load_dotenv
-# import fitz  # PyMuPDF
-# from PIL import Image
-# from sentence_transformers import SentenceTransformer
-# from qdrant_client import QdrantClient
-# from qdrant_client.models import VectorParams, Distance
-# import ollama
-# import google.generativeai as genai
-
-# # -------------------
-# # Load environment variables
-# # -------------------
-# load_dotenv()
-
-# # Gemini config
-# GEMINI_API_KEY = os.environ.get("GEMINI_API")
-# if not GEMINI_API_KEY:
-#     raise ValueError("Set GEMINI_API in .env")
-# genai.configure(api_key=GEMINI_API_KEY)
-# gemini_model = genai.GenerativeModel("gemini-2.5-flash")
-
-# # Qdrant config
-# QDRANT_URL = os.environ.get("QDRANT_URL")
-# QDRANT_API_KEY = os.environ.get("QDRANT_API")
-# if not QDRANT_URL or not QDRANT_API_KEY:
-#     raise ValueError("Set QDRANT_URL and QDRANT_API in .env")
-
-# # -------------------
-# # FastAPI setup
-# # -------------------
-# app = FastAPI(title="MRAG Backend", version="1.0")
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # Update with frontend domain in prod
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# # -------------------
-# # Pydantic Models
-# # -------------------
-# class QueryRequest(BaseModel):
-#     doc_id: str
-#     query: str
-
-# class QueryResponse(BaseModel):
-#     answer: str
-#     context: List[Dict[str, Any]]
-
-# # -------------------
-# # In-memory store
-# # -------------------
-# DOC_STORE = {}  # {doc_id: {"filename": str, "client": QdrantClient, "collection": str}}
-
-# # -------------------
-# # Utils: Extract text chunks
-# # -------------------
-# def extract_texts(pdf_path, output_list, chunk_size=500, overlap=100):
-#     doc = fitz.open(pdf_path)
-#     for page_num, page in enumerate(doc):
-#         text = page.get_text("text").strip()
-#         if text:
-#             words = text.split()
-#             start = 0
-#             chunk_idx = 1
-#             while start < len(words):
-#                 chunk_words = words[start:start+chunk_size]
-#                 chunk_text = " ".join(chunk_words)
-#                 output_list.append({
-#                     "page": page_num,
-#                     "text": f"Page {page_num} text chunk {chunk_idx}: {chunk_text}"
-#                 })
-#                 start += (chunk_size - overlap)
-#                 chunk_idx += 1
-
-# # -------------------
-# # Utils: Extract images + describe with Ollama
-# # -------------------
-# def extract_images_and_describe(pdf_path, output_list, image_dir="extracted_images", context_window=200):
-#     os.makedirs(image_dir, exist_ok=True)
-#     doc = fitz.open(pdf_path)
-#     image_count = 0
-
-#     for page_num, page in enumerate(doc):
-#         page_text = page.get_text("text").strip()
-#         page_words = page_text.split()
-
-#         for img_index, img in enumerate(page.get_images(full=True)):
-#             xref = img[0]
-#             pix = fitz.Pixmap(doc, xref)
-#             if pix.n < 5:
-#                 pil_img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-#             else:
-#                 pix = fitz.Pixmap(fitz.csRGB, pix)
-#                 pil_img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-
-#             img_path = os.path.abspath(os.path.join(image_dir, f"page{page_num}_img{img_index}.png"))
-#             pil_img.save(img_path)
-
-#             start_idx = max(0, img_index*context_window - context_window)
-#             end_idx = min(len(page_words), img_index*context_window + context_window)
-#             nearby_text = " ".join(page_words[start_idx:end_idx])
-
-#             prompt = f"""Describe this image in detail.
-# Label it as {image_count+1}-th image content.
-# Use this nearby text for context: {nearby_text}"""
-
-#             response = ollama.chat(
-#                 model="gemma3:4b",
-#                 messages=[{
-#                     "role": "user",
-#                     "content": prompt,
-#                     "images": [rf"{img_path}"]
-#                 }]
-#             )
-
-#             description = response["message"]["content"]
-#             output_list.append({"page": page_num, "text": f"{image_count+1}-th image content: {description}"})
-#             image_count += 1
-
-# # -------------------
-# # Utils: Embed + store in Qdrant
-# # -------------------
-# def embed_and_store(output_list, collection="pdf_rag"):
-#     model = SentenceTransformer("all-MiniLM-L6-v2")
-#     data = []
-#     for idx, item in enumerate(output_list):
-#         emb = model.encode(item["text"])
-#         data.append({"id": idx, "vector": emb.tolist(), "payload": item})
-
-#     client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
-#     if not client.collection_exists(collection):
-#         client.create_collection(
-#             collection_name=collection,
-#             vectors_config=VectorParams(size=len(data[0]["vector"]), distance=Distance.COSINE)
-#         )
-#     client.upsert(
-#         collection_name=collection,
-#         points=[{"id": d["id"], "vector": d["vector"], "payload": d["payload"]} for d in data]
-#     )
-#     return client
-
-# # -------------------
-# # API Endpoints
-# # -------------------
-# @app.get("/health")
-# async def health():
-#     return {"status": "ok", "backend": "running"}
-
-# @app.post("/upload_pdf")
-# async def upload_pdf(file: UploadFile = File(...)):
-#     try:
-#         doc_id = str(uuid.uuid4())
-#         filename = f"uploads/{doc_id}_{file.filename}"
-#         os.makedirs("uploads", exist_ok=True)
-#         with open(filename, "wb") as f:
-#             f.write(await file.read())
-
-#         output_list = []
-#         extract_texts(filename, output_list)
-#         extract_images_and_describe(filename, output_list)
-
-#         collection_name = f"pdf_{doc_id}"
-#         client = embed_and_store(output_list, collection=collection_name)
-#         DOC_STORE[doc_id] = {"filename": file.filename, "client": client, "collection": collection_name}
-
-#         return {"status": "success", "message": "PDF processed successfully", "doc_id": doc_id, "filename": file.filename}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# @app.post("/query", response_model=QueryResponse)
-# async def query_doc(req: QueryRequest):
-#     if req.doc_id not in DOC_STORE:
-#         raise HTTPException(status_code=404, detail="Document not found")
-
-#     client = DOC_STORE[req.doc_id]["client"]
-#     collection = DOC_STORE[req.doc_id]["collection"]
-
-#     try:
-#         model = SentenceTransformer("all-MiniLM-L6-v2")
-#         query_emb = model.encode(req.query)
-
-#         hits = client.search(collection_name=collection, query_vector=query_emb.tolist(), limit=3)
-
-#         context = []
-#         context_text = ""
-#         for h in hits:
-#             payload = h.payload
-#             context.append(payload)
-#             context_text += f"\n(Page {payload['page']}) {payload['text']}"
-
-#         gemini_prompt = f"""You are a helpful assistant.
-# Use the following context from a PDF to answer the query.
-# If answer not present, say "Not present in the PDF."
-
-# Context:
-# {context_text}
-
-# Query:
-# {req.query}
-# """
-#         response = gemini_model.generate_content(gemini_prompt)
-
-#         return {"answer": response.text, "context": context}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# @app.get("/docs")
-# async def list_docs():
-#     return [{"doc_id": doc_id, "filename": info["filename"]} for doc_id, info in DOC_STORE.items()]
-
-
-
-
-
-
-
-
-
-
-
-
-# backend_full.py
-# import os
-# import uuid
-# from fastapi import FastAPI, UploadFile, File, HTTPException
-# from fastapi.middleware.cors import CORSMiddleware
-# from pydantic import BaseModel
-# from typing import List, Dict, Any
-
-# from dotenv import load_dotenv
-# import fitz  # PyMuPDF
-# from PIL import Image
-# from sentence_transformers import SentenceTransformer
-# from qdrant_client import QdrantClient
-# from qdrant_client.models import VectorParams, Distance
-# import ollama
-# import google.generativeai as genai
-
-# # -------------------
-# # Load environment variables
-# # -------------------
-# load_dotenv()
-
-# # Gemini setup
-# GEMINI_API_KEY = os.environ.get("GEMINI_API")
-# if not GEMINI_API_KEY:
-#     raise ValueError("Set GEMINI_API in .env")
-# genai.configure(api_key=GEMINI_API_KEY)
-# gemini_model = genai.GenerativeModel("gemini-2.5-flash")
-
-# # Qdrant setup
-# QDRANT_URL = os.environ.get("QDRANT_URL")
-# QDRANT_API_KEY = os.environ.get("QDRANT_API")
-# if not QDRANT_URL or not QDRANT_API_KEY:
-#     raise ValueError("Set QDRANT_URL and QDRANT_API in .env")
-
-# # -------------------
-# # FastAPI app config
-# # -------------------
-# app = FastAPI(title="MRAG Backend (Full)", version="2.0")
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # replace with your frontend origin
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# # -------------------
-# # Pydantic Models
-# # -------------------
-# class QueryRequest(BaseModel):
-#     doc_id: str
-#     query: str
-
-# class QueryResponse(BaseModel):
-#     answer: str
-#     context: List[Dict[str, Any]]
-
-# # -------------------
-# # In-memory doc registry
-# # -------------------
-# DOC_STORE = {}  # {doc_id: {"filename": str, "client": QdrantClient, "collection": str}}
-
-# # -------------------
-# # Step 1: Extract text in chunks
-# # -------------------
-# def extract_texts(pdf_path, output_list, chunk_size=500, overlap=100):
-#     doc = fitz.open(pdf_path)
-#     for page_num, page in enumerate(doc):
-#         text = page.get_text("text").strip()
-#         if text:
-#             words = text.split()
-#             start = 0
-#             chunk_idx = 1
-#             while start < len(words):
-#                 chunk_words = words[start:start+chunk_size]
-#                 chunk_text = " ".join(chunk_words)
-#                 output_list.append({
-#                     "page": page_num,
-#                     "text": f"Page {page_num} text chunk {chunk_idx}: {chunk_text}"
-#                 })
-#                 start += (chunk_size - overlap)
-#                 chunk_idx += 1
-#     print(f"Extracted {len(output_list)} text chunks.")
-
-# # -------------------
-# # Step 2: Extract images and describe via Ollama
-# # -------------------
-# def extract_images_and_describe(pdf_path, output_list, image_dir="extracted_images", context_window=200):
-#     os.makedirs(image_dir, exist_ok=True)
-#     doc = fitz.open(pdf_path)
-#     image_count = 0
-
-#     for page_num, page in enumerate(doc):
-#         page_text = page.get_text("text").strip()
-#         page_words = page_text.split()
-
-#         for img_index, img in enumerate(page.get_images(full=True)):
-#             xref = img[0]
-#             pix = fitz.Pixmap(doc, xref)
-
-#             if pix.n < 5:
-#                 pil_img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-#             else:
-#                 pix = fitz.Pixmap(fitz.csRGB, pix)
-#                 pil_img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-
-#             img_path = os.path.abspath(os.path.join(image_dir, f"page{page_num}_img{img_index}.png"))
-#             pil_img.save(img_path)
-
-#             start_idx = max(0, img_index*context_window - context_window)
-#             end_idx = min(len(page_words), img_index*context_window + context_window)
-#             nearby_text = " ".join(page_words[start_idx:end_idx])
-
-#             prompt = f"""Describe this image in detail and infer everything.
-# Label it as {image_count+1}-th image content.
-# Use the following nearby text from the page to help describe the image:
-# Explain whatever can be inferred. List all numerical values or visible texts in the graphs if any.
-
-# Context:
-# {nearby_text}
-# """
-
-#             print(f"Sending image {image_count+1} to Ollama: {img_path}")
-#             try:
-#                 response = ollama.chat(
-#                     model="gemma3:4b",
-#                     messages=[{
-#                         "role": "user",
-#                         "content": prompt,
-#                         "images": [rf"{img_path}"]
-#                     }]
-#                 )
-#                 description = response["message"]["content"]
-#             except Exception as e:
-#                 description = f"Ollama error: {e}"
-
-#             output_list.append({
-#                 "page": page_num,
-#                 "text": f"{image_count+1}-th image content: {description}"
-#             })
-#             image_count += 1
-#     print(f"Processed {image_count} images.")
-
-# # -------------------
-# # Step 3: Append all extracted text into one combined text
-# # -------------------
-# def append_all_texts(output_list):
-#     combined = "\n".join([item["text"] for item in output_list])
-#     output_list.append({
-#         "page": -1,
-#         "text": f"Full combined PDF content:\n{combined}"
-#     })
-#     print("Appended combined text to output list.")
-
-# # -------------------
-# # Step 4: Embed and store into Qdrant
-# # -------------------
-# def embed_and_store(output_list, collection="pdf_rag"):
-#     model = SentenceTransformer("all-MiniLM-L6-v2")
-#     data = []
-#     for idx, item in enumerate(output_list):
-#         emb = model.encode(item["text"])
-#         data.append({"id": idx, "vector": emb.tolist(), "payload": item})
-
-#     client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY, timeout=60.0)
-
-#     if not client.collection_exists(collection):
-#         client.create_collection(
-#             collection_name=collection,
-#             vectors_config=VectorParams(size=len(data[0]["vector"]), distance=Distance.COSINE)
-#         )
-
-#     client.upsert(
-#         collection_name=collection,
-#         points=[
-#             {"id": d["id"], "vector": d["vector"], "payload": d["payload"]}
-#             for d in data
-#         ]
-#     )
-#     print(f"Stored {len(data)} chunks in Qdrant.")
-#     return client
-
-# # -------------------
-# # API Endpoints
-# # -------------------
-# @app.get("/health")
-# async def health():
-#     return {"status": "ok", "backend": "running"}
-
-# @app.post("/upload_pdf")
-# async def upload_pdf(file: UploadFile = File(...)):
-#     try:
-#         doc_id = str(uuid.uuid4())
-#         filename = f"uploads/{doc_id}_{file.filename}"
-#         os.makedirs("uploads", exist_ok=True)
-
-#         with open(filename, "wb") as f:
-#             f.write(await file.read())
-
-#         output_list = []
-#         extract_texts(filename, output_list)
-#         extract_images_and_describe(filename, output_list)
-#         append_all_texts(output_list)  # ✅ include combined full text
-
-#         collection_name = f"pdf_{doc_id}"
-#         client = embed_and_store(output_list, collection=collection_name)
-
-#         DOC_STORE[doc_id] = {
-#             "filename": file.filename,
-#             "client": client,
-#             "collection": collection_name
-#         }
-
-#         return {
-#             "status": "success",
-#             "message": "PDF processed successfully",
-#             "doc_id": doc_id,
-#             "filename": file.filename
-#         }
-
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# @app.post("/query", response_model=QueryResponse)
-# async def query_doc(req: QueryRequest):
-#     if req.doc_id not in DOC_STORE:
-#         raise HTTPException(status_code=404, detail="Document not found")
-
-#     try:
-#         client = DOC_STORE[req.doc_id]["client"]
-#         collection = DOC_STORE[req.doc_id]["collection"]
-
-#         model = SentenceTransformer("all-MiniLM-L6-v2")
-#         query_emb = model.encode(req.query)
-
-#         hits = client.search(collection_name=collection, query_vector=query_emb.tolist(), limit=3)
-
-#         context = []
-#         context_text = ""
-#         for h in hits:
-#             payload = h.payload
-#             context.append(payload)
-#             context_text += f"\n(Page {payload['page']}) {payload['text']}"
-
-#         gemini_prompt = f"""You are a helpful assistant. 
-# Use the following context from the PDF to answer the query. 
-# If the answer is not present, reply: "Not present in the PDF."
-
-# Context:
-# {context_text}
-
-# Query:
-# {req.query}
-# """
-
-#         response = gemini_model.generate_content(gemini_prompt)
-#         return {"answer": response.text, "context": context}
-
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# @app.get("/docs_list")
-# async def list_docs():
-#     return [{"doc_id": doc_id, "filename": info["filename"]} for doc_id, info in DOC_STORE.items()]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import os
 import uuid
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -529,6 +16,8 @@ import google.generativeai as genai
 import shutil
 import time 
 import pytesseract
+from metrics import calculate_recall_precision, calculate_semantic_similarity, calculate_faithfulness
+
 import numpy as np
 # 1. Configure Tesseract Path (MUST BE CORRECT for your system)
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -798,9 +287,64 @@ async def upload_pdf(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
 
 
+# @app.post("/query", response_model=QueryResponse)
+# async def query_doc(req: QueryRequest):
+#     """Retrieves context from Qdrant and uses the high-RPM FLASH model for synthesis."""
+#     if req.doc_id not in DOC_STORE:
+#         raise HTTPException(status_code=404, detail="Document not found")
+
+#     try:
+#         doc_info = DOC_STORE[req.doc_id]
+#         client = doc_info["client"]
+#         collection = doc_info["collection"]
+
+#         # 1. Embed query locally
+#         model = SentenceTransformer("all-MiniLM-L6-v2")
+#         query_emb = model.encode(req.query)
+
+#         # 2. Retrieve relevant chunks (text and cached descriptions)
+#         hits = client.search(collection_name=collection, query_vector=query_emb.tolist(), limit=5)
+
+#         context = []
+#         context_text = ""
+#         for h in hits:
+#             payload = h.payload
+#             context.append({"page": payload['page'], "text": payload['text'], "score": h.score})
+#             context_text += f"\n(Page {payload['page']}) {payload['text']}"
+
+#         # 3. Use FLASH KEY for Synthesis (High-volume task)
+#         # --- DYNAMIC KEY SWAP (FLASH) ---
+#         genai.configure(api_key=TEXT_API_KEY)
+#         flash_model = genai.GenerativeModel(model_name=TEXT_MODEL_NAME)
+
+#         gemini_prompt = f"""You are a helpful assistant and expert document analyst.
+# Use ONLY the following context to answer the user's query.
+# The context includes standard text chunks and cached visual descriptions.
+# If the answer relies on numerical data or diagrams, prioritize the details from the 'VISUAL CACHE' entries.
+
+# Context:
+# {context_text}
+
+# Query:
+# {req.query}
+# """
+#         # Call the high-RPM model
+#         response = flash_model.generate_content(gemini_prompt)
+
+#         return {"answer": response.text, "context": context}
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
+
+@app.get("/docs_list")
+async def list_docs():
+    return [{"doc_id": doc_id, "filename": info["filename"]} for doc_id, info in DOC_STORE.items()]
+
+
+
 @app.post("/query", response_model=QueryResponse)
 async def query_doc(req: QueryRequest):
-    """Retrieves context from Qdrant and uses the high-RPM FLASH model for synthesis."""
+    """Retrieves context from Qdrant, uses FLASH model for synthesis, and evaluates performance."""
     if req.doc_id not in DOC_STORE:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -809,22 +353,27 @@ async def query_doc(req: QueryRequest):
         client = doc_info["client"]
         collection = doc_info["collection"]
 
+        start_total = time.time()
+
         # 1. Embed query locally
         model = SentenceTransformer("all-MiniLM-L6-v2")
         query_emb = model.encode(req.query)
 
-        # 2. Retrieve relevant chunks (text and cached descriptions)
+        # 2. Retrieve relevant chunks
+        start_retrieval = time.time()
         hits = client.search(collection_name=collection, query_vector=query_emb.tolist(), limit=5)
+        retrieval_time = (time.time() - start_retrieval) * 1000  # ms
 
         context = []
         context_text = ""
-        for h in hits:
+        retrieved_ids = []
+        for idx, h in enumerate(hits):
             payload = h.payload
-            context.append({"page": payload['page'], "text": payload['text'], "score": h.score})
+            context.append({"id": idx, "page": payload['page'], "text": payload['text'], "score": h.score})
             context_text += f"\n(Page {payload['page']}) {payload['text']}"
+            retrieved_ids.append(idx)
 
-        # 3. Use FLASH KEY for Synthesis (High-volume task)
-        # --- DYNAMIC KEY SWAP (FLASH) ---
+        # 3. Use FLASH KEY for Synthesis
         genai.configure(api_key=TEXT_API_KEY)
         flash_model = genai.GenerativeModel(model_name=TEXT_MODEL_NAME)
 
@@ -839,14 +388,37 @@ Context:
 Query:
 {req.query}
 """
-        # Call the high-RPM model
+        start_gen = time.time()
         response = flash_model.generate_content(gemini_prompt)
+        generation_time = (time.time() - start_gen) * 1000  # ms
 
+        total_time = (time.time() - start_total) * 1000  # ms
+
+        # ----------------------------
+        # 4. Evaluate Metrics (Console Output)
+        # ----------------------------
+        # If you have a ground truth answer for testing, set it here:
+        ground_truth = "Expected correct answer for testing"
+        ground_truth_ids = [0, 1]  # example top-k relevant chunk IDs
+
+        recall_precision = calculate_recall_precision(retrieved_ids, ground_truth_ids)
+        semantic_similarity = calculate_semantic_similarity(response.text, ground_truth)
+        faithfulness_score = calculate_faithfulness(context_text, response.text)
+
+        print("\n===== QUERY EVALUATION METRICS =====")
+        print(f"Query: {req.query}")
+        print(f"Answer: {response.text}")
+        print(f"Recall@k: {recall_precision['recall@k']:.2f}")
+        print(f"Precision@k: {recall_precision['precision@k']:.2f}")
+        print(f"Semantic Similarity: {semantic_similarity:.2f}")
+        print(f"Faithfulness Score: {faithfulness_score:.2f}")
+        print(f"Retrieval Time (ms): {retrieval_time:.2f}")
+        print(f"Generation Time (ms): {generation_time:.2f}")
+        print(f"Total Time (ms): {total_time:.2f}")
+        print("====================================\n")
+
+        # 5. Return normal API response
         return {"answer": response.text, "context": context}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
-
-@app.get("/docs_list")
-async def list_docs():
-    return [{"doc_id": doc_id, "filename": info["filename"]} for doc_id, info in DOC_STORE.items()]

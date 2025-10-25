@@ -1,5 +1,205 @@
+// import { useState, useRef } from 'react';
+// import { Upload, FileText, Loader2 } from 'lucide-react';
+
+// interface PDFUploadProps {
+//   onUploadSuccess: (docId: string, filename: string) => void;
+//   onUploadError: (error: string) => void;
+//   isUploading: boolean;
+//   setIsUploading: (loading: boolean) => void;
+// }
+
+// export function PDFUpload({
+//   onUploadSuccess,
+//   onUploadError,
+//   isUploading,
+//   setIsUploading,
+// }: PDFUploadProps) {
+//   const [isDragging, setIsDragging] = useState(false);
+//   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+//   const [uploadProgress, setUploadProgress] = useState(0);
+//   const fileInputRef = useRef<HTMLInputElement>(null);
+
+//   const handleDragOver = (e: React.DragEvent) => {
+//     e.preventDefault();
+//     setIsDragging(true);
+//   };
+
+//   const handleDragLeave = () => {
+//     setIsDragging(false);
+//   };
+
+//   const handleDrop = (e: React.DragEvent) => {
+//     e.preventDefault();
+//     setIsDragging(false);
+
+//     const file = e.dataTransfer.files[0];
+//     if (file && file.type === 'application/pdf') {
+//       handleFileSelect(file);
+//     } else {
+//       onUploadError('Please upload a valid PDF file');
+//     }
+//   };
+
+//   const handleFileSelect = (file: File) => {
+//     setSelectedFile(file);
+//     setUploadProgress(0);
+//   };
+
+//   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = e.target.files?.[0];
+//     if (file) {
+//       handleFileSelect(file);
+//     }
+//   };
+
+//   const simulateProgress = () => {
+//     setUploadProgress(0);
+//     const interval = setInterval(() => {
+//       setUploadProgress((prev) => {
+//         if (prev >= 90) {
+//           clearInterval(interval);
+//           return 90;
+//         }
+//         return prev + 10;
+//       });
+//     }, 200);
+//     return interval;
+//   };
+
+//   const handleUpload = async () => {
+//     if (!selectedFile) return;
+
+//     setIsUploading(true);
+//     const progressInterval = simulateProgress();
+
+//     try {
+//       const formData = new FormData();
+//       formData.append('file', selectedFile);
+
+//       const response = await fetch(
+//         `http://localhost:8000/upload_pdf`,
+//         {
+//           method: 'POST',
+//           body: formData,
+//         }
+//       );
+
+//       clearInterval(progressInterval);
+
+//       if (!response.ok) {
+//         const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+//         throw new Error(error.message || 'Failed to upload PDF');
+//       }
+
+//       const data = await response.json();
+//       setUploadProgress(100);
+
+//       setTimeout(() => {
+//         onUploadSuccess(data.doc_id, selectedFile.name);
+//         setSelectedFile(null);
+//         setUploadProgress(0);
+//       }, 500);
+//     } catch (error) {
+//       clearInterval(progressInterval);
+//       onUploadError(error instanceof Error ? error.message : 'Failed to upload PDF');
+//       setUploadProgress(0);
+//     } finally {
+//       setIsUploading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="w-full max-w-2xl mx-auto">
+//       <div
+//         onDragOver={handleDragOver}
+//         onDragLeave={handleDragLeave}
+//         onDrop={handleDrop}
+//         className={`
+//           relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300
+//           ${isDragging ? 'border-purple-500 dark:border-purple-400 bg-purple-500/10 scale-105' : 'border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50'}
+//           ${isUploading ? 'pointer-events-none opacity-60' : 'hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'}
+//         `}
+//       >
+//         <input
+//           ref={fileInputRef}
+//           type="file"
+//           accept=".pdf"
+//           onChange={handleFileInputChange}
+//           className="hidden"
+//         />
+
+//         <div className="flex flex-col items-center gap-4 text-center">
+//           <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
+//             <Upload className="w-8 h-8 text-white" />
+//           </div>
+
+//           <div>
+//             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+//               Upload PDF Document
+//             </h3>
+//             <p className="text-sm text-gray-600 dark:text-gray-400">
+//               Drag and drop your PDF here, or click to browse
+//             </p>
+//           </div>
+
+//           <button
+//             onClick={() => fileInputRef.current?.click()}
+//             disabled={isUploading}
+//             className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+//           >
+//             Browse Files
+//           </button>
+//         </div>
+
+//         {selectedFile && (
+//           <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+//             <div className="flex items-center gap-3 mb-3">
+//               <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+//               <span className="text-sm text-gray-900 dark:text-white flex-1 truncate font-medium">
+//                 {selectedFile.name}
+//               </span>
+//               <span className="text-xs text-gray-600 dark:text-gray-400">
+//                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+//               </span>
+//             </div>
+
+//             {uploadProgress > 0 && (
+//               <div className="mb-3">
+//                 <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+//                   <div
+//                     className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+//                     style={{ width: `${uploadProgress}%` }}
+//                   />
+//                 </div>
+//                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 text-right">
+//                   {uploadProgress}%
+//                 </p>
+//               </div>
+//             )}
+
+//             <button
+//               onClick={handleUpload}
+//               disabled={isUploading}
+//               className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+//             >
+//               {isUploading ? (
+//                 <>
+//                   <Loader2 className="w-4 h-4 animate-spin" />
+//                   Processing...
+//                 </>
+//               ) : (
+//                 'Upload & Process'
+//               )}
+//             </button>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
 import { useState, useRef } from 'react';
-import { Upload, FileText, Loader2 } from 'lucide-react';
+import { Upload, FileText, Loader2, Zap } from 'lucide-react'; // Added Zap for a spark icon
 
 interface PDFUploadProps {
   onUploadSuccess: (docId: string, filename: string) => void;
@@ -36,7 +236,8 @@ export function PDFUpload({
     if (file && file.type === 'application/pdf') {
       handleFileSelect(file);
     } else {
-      onUploadError('Please upload a valid PDF file');
+      // Use a more neon-like error style
+      onUploadError('SYSTEM ALERT: Only valid PDF files are accepted.');
     }
   };
 
@@ -109,15 +310,21 @@ export function PDFUpload({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto animate-slide-up">
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300
-          ${isDragging ? 'border-purple-500 dark:border-purple-400 bg-purple-500/10 scale-105' : 'border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50'}
-          ${isUploading ? 'pointer-events-none opacity-60' : 'hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'}
+          relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300 metallic-card
+          ${isDragging 
+            ? 'border-neon-green/80 shadow-neon-light scale-[1.02]' 
+            : 'border-gray-700 hover:border-neon-green/50'
+          }
+          ${isUploading 
+            ? 'pointer-events-none opacity-70' 
+            : 'cursor-pointer'
+          }
         `}
       >
         <input
@@ -129,66 +336,77 @@ export function PDFUpload({
         />
 
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
-            <Upload className="w-8 h-8 text-white" />
+          
+          {/* Neon Icon Container */}
+          <div className="w-16 h-16 rounded-full bg-neon-green/20 border border-neon-green/50 flex items-center justify-center shadow-neon-light animate-pulse-slow">
+            <Upload className="w-8 h-8 text-neon-green neon-text-glow" />
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-              Upload PDF Document
+            {/* Styled with neon glow */}
+            <h3 className="text-xl font-extrabold text-white mb-1 neon-text-glow">
+              VECTOR ENCODING INPUT
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Drag and drop your PDF here, or click to browse
+            {/* Accent line */}
+            <p className="text-sm text-gray-400 border-b border-neon-green/30 inline-block px-2 pb-1">
+              Drag & Drop PDF or select file for ingestion.
             </p>
           </div>
 
+          {/* Browse Files Button: Styled as a secondary metallic button */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+            className="mt-2 px-6 py-3 metallic-card text-gray-300 rounded-xl font-semibold shadow-lg hover:shadow-neon-light transform hover:scale-105 transition-all duration-300 border border-gray-700 hover:border-cyan-400"
           >
-            Browse Files
+            SELECT LOCAL FILE
           </button>
         </div>
 
         {selectedFile && (
-          <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+          // File Preview: Styled as a distinct metallic card
+          <div className="mt-6 p-4 rounded-xl border border-neon-green/40 bg-card-surface/70 shadow-lg shadow-neon-green/10">
             <div className="flex items-center gap-3 mb-3">
-              <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              <span className="text-sm text-gray-900 dark:text-white flex-1 truncate font-medium">
+              <FileText className="w-5 h-5 text-cyan-400 neon-text-glow" />
+              <span className="text-sm text-white flex-1 truncate font-medium">
                 {selectedFile.name}
               </span>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
+              <span className="text-xs text-neon-green">
                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
               </span>
             </div>
 
+            {/* Progress Bar */}
             {uploadProgress > 0 && (
-              <div className="mb-3">
-                <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+              <div className="mb-4">
+                <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+                    className="h-full bg-gradient-to-r from-cyan-400 to-neon-green transition-all duration-300 shadow-lg shadow-cyan-400/50"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 text-right">
+                <p className="text-xs font-mono text-neon-green mt-1 text-right neon-text-glow">
                   {uploadProgress}%
                 </p>
               </div>
             )}
 
+            {/* Upload Button: Primary Neon Green Style */}
             <button
               onClick={handleUpload}
               disabled={isUploading}
-              className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              className="w-full px-4 py-3 bg-neon-green hover:bg-white text-neon-black rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-neon-light disabled:bg-gray-700 disabled:text-gray-400"
             >
               {isUploading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Processing...
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-neon-black">Processing Data...</span>
                 </>
               ) : (
-                'Upload & Process'
+                <>
+                  <Zap className="w-5 h-5" />
+                  Initiate RAG Ingestion
+                </>
               )}
             </button>
           </div>
