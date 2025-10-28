@@ -211,9 +211,9 @@ export function Homepage({ onGetStarted }: HomepageProps) {
         <div className="text-center mb-16 animate-slide-up relative">
           
           {/* Theme Toggle (kept for functionality, styled by its own component) */}
-          <div className="absolute top-0 right-0 mt-6 mr-6 z-20">
+          {/* <div className="absolute top-0 right-0 mt-6 mr-6 z-20">
             <ThemeToggle />
-          </div>
+          </div> */}
           
           {/* Tagline: Styled to use neon-green */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-card-surface/50 rounded-full border border-neon-green/30 shadow-neon-light mb-6">

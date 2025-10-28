@@ -1,1 +1,80 @@
 query,ground_truth,retrieved_chunks,answer,recall@k,precision@k,semantic_similarity,faithfulness_score,retrieval_time_ms,generation_time_ms,total_time_ms
+1761658916,summarize the story to me,Expected correct answer for testing,5,"The story, ""The Steam and the Soul of Ganesh Lane,"" presents a heartfelt slice of life, portraying a single evening in the cherished daily ritual of Ramesh Ji, a beloved momo vendor, and his profound role as the community's anchor on Ganesh Lane.
+
+Here's a summary of the plot:
+
+1.  **The Daily Unveiling:** Precisely at 5 PM, Ramesh Ji's meticulously cared-for momo cart appears on Ganesh Lane, instantly filling the air with the irresistible aroma of ginger, garlic, and steaming dough, signaling the start of the evening's culinary magic.
+2.  **The Community's Pilgrimage:** As dusk falls, a diverse group from the neighborhood — including office workers, students, and families — makes a daily trip to Ramesh Ji's cart, drawn by his perfectly crafted momos.
+3.  **The Heart of Ganesh Lane:** Ramesh Ji is more than a vendor; he's the community's anchor. He hand-rolls dough and pleats each momo twenty-two times, serving them with fiery chili or soothing sesame chutneys. He remembers individual preferences, like Harshita's spicy request or Mrs. Das's mild one, and offers subtle blessings or understanding nods, creating deep personal connections.
+4.  **A Vibrant Soundscape:** Ramesh Ji's corner becomes a bustling hub, filled with the gentle clink of ceramic plates, laughter, conversations, and the rhythmic hiss of the steamer, forming a comforting symphony that highlights his role in weaving connections and providing a cherished break from urban life.
+5.  **Quiet Fulfillment:** After the last momo is served and the crowd leaves, Ramesh Ji methodically cleans his cart. Despite the day's physical demands, he feels immense satisfaction, not from his earnings, but from the genuine joy and connection he saw on his customers' faces.
+6.  **The Enduring Legacy:** Ramesh Ji ends his day with the quiet realization that his momos are much more than a snack; they embody the very soul of Ganesh Lane, and he will return tomorrow to continue this vital, heartwarming ritual.",5,0.5,0.2,0.2,0.1,0.38685280723454163,-0.011920644901692867,0.0,0.5325183882329603,11553.986072540283,6000.401973724365,20877.15482711792
+1761659008,what are the dialogues of Ramesh Ji ?,Expected correct answer for testing,5,"Based on the provided context, Ramesh Ji's dialogues are:
+
+*   (To Mrs. Das, with a gentle smile) ""For you, Mrs. Das... warmth.""
+*   (To Harshita, with a knowing nod) ""Harshita, your spark.""",5,0.5,0.2,0.25,0.125,0.43067655807339306,-0.09138630330562592,0.0,0.34018495909553076,10573.285579681396,5811.429977416992,19530.181884765625
+2025-10-28 19:49:07,summarize the pdf,"Page 9 provides a comprehensive overview of the company's financial performance, market distribution, and strategic outlook, particularly focusing on the automatic data capture market.
+
+**Financial Performance & Revenue Distribution:**
+The company experienced robust revenue growth across all categories from 1996 to 1999. ""Licenses"" remained the primary revenue driver, growing from approximately 18 SEK m in 1996 to 83 SEK m in 1999. ""Service contracts, development, education"" and ""Hardware, other"" also showed significant and accelerating growth, with services increasing from about 5 SEK m to 45 SEK m, and hardware from 8 SEK m to 43 SEK m over the same period.
+Product-wise, ""FORMS"" consistently generated substantially higher license revenues than ""INVOICES,"" growing from about 18 SEK m to 68 SEK m between 1996 and 1999. ""INVOICES"" also showed strong growth, especially in 1999, rising from roughly 2 SEK m in 1996 to 15 SEK m.
+
+**Market Distribution of License Income:**
+The majority of the company's license income comes from Europe (61%), followed by Sweden (23%), and then other markets (16%).
+
+**Company Strategy & Market Presence:**
+The company has sales organizations in several US cities (Philadelphia, Atlanta, Dallas, San Diego, New Orleans) and estimates its own sales organization covers approximately 70% of the world market. It plans to establish new sales organizations in Japan and another Asian market. The strategy involves direct sales to customers and sales through distributors, with a focus on local presence for greater control and market penetration, which is deemed vital for its market position.
+
+**Automatic Data Capture Market:**
+The market for automatic data capture is described as young, growing, and largely untapped, with tremendous potential. Currently, only a fraction of data entry from documents is automated. Key customer benefits of automatic data capture systems include reduced data entry costs, increased accuracy, shorter entry times, improved capacity for seasonal variation, and a better working environment by eliminating monotonous tasks. A report by Wood Associates also highlights the expense of data entry from paper documents.",1.0,1.0,0.0,0.459,8976.52,486.56,9656.6,16096.37
+2025-10-28 19:50:22,what happened in 1999,"In 1999, the following occurred:
+
+*   **License revenues by product (SEK m):**
+    *   FORMS revenue was approximately 68 SEK m.
+    *   INVOICES revenue was approximately 15 SEK m, which represented significant growth for this product.
+    *   Both FORMS and INVOICES showed strong year-over-year revenue growth.
+
+*   **Distribution of revenue (SEK m):**
+    *   Licenses revenue was approximately 83 SEK m.
+    *   Service contracts, development, education revenue was approximately 45 SEK m.
+    *   Hardware, other revenue was approximately 43 SEK m.
+    *   All three categories (Licenses, Service contracts, and Hardware) demonstrated strong, accelerated growth, with 'Hardware, other' and 'Service contracts, development, education' showing particularly steep increases.",1.0,1.0,0.0,0.322,43350.79,629.01,8681.95,13467.21
+2025-10-28 20:05:54,summarize the document,"This document, labeled as page 9, provides an overview of ReadSoft's market performance, revenue distribution, and strategic insights into the automatic data capture market.
+
+**Graphically, the data shows:**
+*   **License income by market:** Europe accounts for the largest share at 61%, followed by Sweden at 23%, and other markets at 16%.
+*   **License revenues by product (1996-1999):** ""FORMS"" revenue consistently grew from approximately 18 SEK million in 1996 to about 68 SEK million in 1999. ""INVOICES"" revenue, while smaller, also grew from negligible amounts in the early years to approximately 15 SEK million by 1999.
+*   **Distribution of total revenue (1996-1999):** All three categories—Licenses, Service contracts/development/education, and Hardware/other—showed consistent growth. Licenses were the largest contributor, growing from approximately 18 SEK million to 82 SEK million. Service grew from about 7 SEK million to 45 SEK million, and Hardware from roughly 5 SEK million to 43 SEK million.
+
+**Descriptive text highlights:**
+*   ReadSoft's sales organization covers about 70 percent of the world market, with future plans to establish organizations in Japan and another Asian market. The company employs a strategy of direct sales and distribution, valuing local presence for market penetration.
+*   The market for automatic data capture is described as young, largely untapped, and having tremendous potential, with only a small fraction of data entry currently automated.
+*   Key customer benefits of investing in automatic data capture include reduced data entry costs, increased accuracy, shorter entry times, improved capacity for seasonal variation, and a better working environment.
+*   A report by Wood Associates on the expense of data entry from paper documents is mentioned, though the sentence is incomplete.",1.0,1.0,0.813,0.426,7080.44,11656.53,16669.42,33191.97
+2025-10-28 20:08:46,what happened in 1999,"In 1999, the following occurred regarding revenues:
+
+*   **License revenues by product:**
+    *   FORMS generated approximately 68 SEK million.
+    *   INVOICES generated approximately 15 SEK million.
+*   **Distribution of revenue:**
+    *   Licenses generated approximately 82 SEK million.
+    *   Service contracts, development, education generated approximately 45 SEK million.
+    *   Hardware, other generated approximately 43 SEK million.",1.0,1.0,0.578,0.275,42756.94,675.82,13568.4,19662.19
+2025-10-28 20:22:53,summarize the document,"This document provides a comprehensive overview of ReadSoft's financial performance, market strategy, and insights into the automatic data capture market.
+
+**Key highlights from the document include:**
+
+*   **Financial Performance:**
+    *   **License Income by Market:** Europe accounts for the largest share of license income (61%), followed by Sweden (23%) and other markets (16%).
+    *   **License Revenues by Product:** Revenues from the ""FORMS"" product significantly increased from 1996 to 1999, consistently outperforming ""INVOICES,"" which also showed growth, particularly in 1999.
+    *   **Distribution of Revenue:** ""Licenses"" consistently generated the largest portion of total revenue and showed strong growth between 1996 and 1999. ""Service contracts, development, education"" and ""Hardware, other"" categories also demonstrated healthy growth over the same period, contributing substantially to overall revenue.
+*   **Market Strategy and Global Presence:**
+    *   ReadSoft's sales organization covers approximately 70% of the world market, with presence in major US cities.
+    *   Future expansion plans include establishing sales organizations in Japan and another Asian market.
+    *   The company employs a dual sales strategy, selling directly to customers and through distributors, emphasizing local presence for increased focus, sales control, and market penetration.
+    *   Breaking into strategic markets and gaining market share are crucial for ReadSoft's strength and position.
+*   **Automatic Data Capture Market:**
+    *   Described as a young and largely untapped market with ""tremendous potential,"" driven by technological development.
+    *   Currently, only a fraction of data entry from documents is automated in the business world.
+    *   Primary customer benefits of automatic data capture systems include reduced data entry costs, increased accuracy, shorter entry times, improved capacity for seasonal variations, and a better working environment.
+    *   A report by Wood Associates highlights the significant expense of manual data entry from paper documents.",0.0,0.0,0.808,0.452,51109.09,615.47,10030.19,14915.31

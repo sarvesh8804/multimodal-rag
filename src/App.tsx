@@ -305,6 +305,10 @@ export function App() {
 
   const removeToast = (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
+  const handleMetrics = () => {
+    
+  }
+
   const handleUploadSuccess = (docId: string, filename: string) => {
     const newDoc: Document = { doc_id: docId, filename, uploadedAt: new Date() };
     setDocuments((prev) => [...prev, newDoc]);
@@ -407,7 +411,7 @@ export function App() {
             </div>
           )}
 
-          <ThemeToggle />
+          {/* <ThemeToggle /> */}
         </div>
       </header>
 
@@ -462,6 +466,7 @@ export function App() {
                 </button>
               ))}
             </div>
+            <button onClick={handleMetrics} >view metrics</button>
           </div>
         )}
       </main>
