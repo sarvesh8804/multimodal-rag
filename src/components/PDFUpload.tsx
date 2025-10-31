@@ -1,205 +1,8 @@
-// import { useState, useRef } from 'react';
-// import { Upload, FileText, Loader2 } from 'lucide-react';
-
-// interface PDFUploadProps {
-//   onUploadSuccess: (docId: string, filename: string) => void;
-//   onUploadError: (error: string) => void;
-//   isUploading: boolean;
-//   setIsUploading: (loading: boolean) => void;
-// }
-
-// export function PDFUpload({
-//   onUploadSuccess,
-//   onUploadError,
-//   isUploading,
-//   setIsUploading,
-// }: PDFUploadProps) {
-//   const [isDragging, setIsDragging] = useState(false);
-//   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-//   const [uploadProgress, setUploadProgress] = useState(0);
-//   const fileInputRef = useRef<HTMLInputElement>(null);
-
-//   const handleDragOver = (e: React.DragEvent) => {
-//     e.preventDefault();
-//     setIsDragging(true);
-//   };
-
-//   const handleDragLeave = () => {
-//     setIsDragging(false);
-//   };
-
-//   const handleDrop = (e: React.DragEvent) => {
-//     e.preventDefault();
-//     setIsDragging(false);
-
-//     const file = e.dataTransfer.files[0];
-//     if (file && file.type === 'application/pdf') {
-//       handleFileSelect(file);
-//     } else {
-//       onUploadError('Please upload a valid PDF file');
-//     }
-//   };
-
-//   const handleFileSelect = (file: File) => {
-//     setSelectedFile(file);
-//     setUploadProgress(0);
-//   };
-
-//   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = e.target.files?.[0];
-//     if (file) {
-//       handleFileSelect(file);
-//     }
-//   };
-
-//   const simulateProgress = () => {
-//     setUploadProgress(0);
-//     const interval = setInterval(() => {
-//       setUploadProgress((prev) => {
-//         if (prev >= 90) {
-//           clearInterval(interval);
-//           return 90;
-//         }
-//         return prev + 10;
-//       });
-//     }, 200);
-//     return interval;
-//   };
-
-//   const handleUpload = async () => {
-//     if (!selectedFile) return;
-
-//     setIsUploading(true);
-//     const progressInterval = simulateProgress();
-
-//     try {
-//       const formData = new FormData();
-//       formData.append('file', selectedFile);
-
-//       const response = await fetch(
-//         `http://localhost:8000/upload_pdf`,
-//         {
-//           method: 'POST',
-//           body: formData,
-//         }
-//       );
-
-//       clearInterval(progressInterval);
-
-//       if (!response.ok) {
-//         const error = await response.json().catch(() => ({ message: 'Upload failed' }));
-//         throw new Error(error.message || 'Failed to upload PDF');
-//       }
-
-//       const data = await response.json();
-//       setUploadProgress(100);
-
-//       setTimeout(() => {
-//         onUploadSuccess(data.doc_id, selectedFile.name);
-//         setSelectedFile(null);
-//         setUploadProgress(0);
-//       }, 500);
-//     } catch (error) {
-//       clearInterval(progressInterval);
-//       onUploadError(error instanceof Error ? error.message : 'Failed to upload PDF');
-//       setUploadProgress(0);
-//     } finally {
-//       setIsUploading(false);
-//     }
-//   };
-
-//   return (
-//     <div className="w-full max-w-2xl mx-auto">
-//       <div
-//         onDragOver={handleDragOver}
-//         onDragLeave={handleDragLeave}
-//         onDrop={handleDrop}
-//         className={`
-//           relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300
-//           ${isDragging ? 'border-purple-500 dark:border-purple-400 bg-purple-500/10 scale-105' : 'border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50'}
-//           ${isUploading ? 'pointer-events-none opacity-60' : 'hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'}
-//         `}
-//       >
-//         <input
-//           ref={fileInputRef}
-//           type="file"
-//           accept=".pdf"
-//           onChange={handleFileInputChange}
-//           className="hidden"
-//         />
-
-//         <div className="flex flex-col items-center gap-4 text-center">
-//           <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
-//             <Upload className="w-8 h-8 text-white" />
-//           </div>
-
-//           <div>
-//             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-//               Upload PDF Document
-//             </h3>
-//             <p className="text-sm text-gray-600 dark:text-gray-400">
-//               Drag and drop your PDF here, or click to browse
-//             </p>
-//           </div>
-
-//           <button
-//             onClick={() => fileInputRef.current?.click()}
-//             disabled={isUploading}
-//             className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
-//           >
-//             Browse Files
-//           </button>
-//         </div>
-
-//         {selectedFile && (
-//           <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
-//             <div className="flex items-center gap-3 mb-3">
-//               <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-//               <span className="text-sm text-gray-900 dark:text-white flex-1 truncate font-medium">
-//                 {selectedFile.name}
-//               </span>
-//               <span className="text-xs text-gray-600 dark:text-gray-400">
-//                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-//               </span>
-//             </div>
-
-//             {uploadProgress > 0 && (
-//               <div className="mb-3">
-//                 <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-//                   <div
-//                     className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-//                     style={{ width: `${uploadProgress}%` }}
-//                   />
-//                 </div>
-//                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 text-right">
-//                   {uploadProgress}%
-//                 </p>
-//               </div>
-//             )}
-
-//             <button
-//               onClick={handleUpload}
-//               disabled={isUploading}
-//               className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-//             >
-//               {isUploading ? (
-//                 <>
-//                   <Loader2 className="w-4 h-4 animate-spin" />
-//                   Processing...
-//                 </>
-//               ) : (
-//                 'Upload & Process'
-//               )}
-//             </button>
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
-
-import { useState, useRef } from 'react';
-import { Upload, FileText, Loader2, Zap } from 'lucide-react'; // Added Zap for a spark icon
+import { useCallback, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Upload, FileText, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 interface PDFUploadProps {
   onUploadSuccess: (docId: string, filename: string) => void;
@@ -214,203 +17,164 @@ export function PDFUpload({
   isUploading,
   setIsUploading,
 }: PDFUploadProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const file = e.dataTransfer.files[0];
-    if (file && file.type === 'application/pdf') {
-      handleFileSelect(file);
-    } else {
-      // Use a more neon-like error style
-      onUploadError('SYSTEM ALERT: Only valid PDF files are accepted.');
-    }
-  };
-
-  const handleFileSelect = (file: File) => {
-    setSelectedFile(file);
-    setUploadProgress(0);
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const simulateProgress = () => {
-    setUploadProgress(0);
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(interval);
-          return 90;
-        }
-        return prev + 10;
-      });
-    }, 200);
-    return interval;
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
-    const progressInterval = simulateProgress();
+    setError(null);
+    setUploadProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => (prev >= 90 ? 90 : prev + 10));
+    }, 200);
 
     try {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append('file', file);
 
-      const response = await fetch(
-        `http://localhost:8000/upload_pdf`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
+      const response = await fetch('http://localhost:8000/upload_pdf', {
+        method: 'POST',
+        body: formData,
+      });
 
       clearInterval(progressInterval);
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Upload failed' }));
-        throw new Error(error.message || 'Failed to upload PDF');
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errorData.error || 'Failed to upload document');
       }
 
       const data = await response.json();
       setUploadProgress(100);
 
       setTimeout(() => {
-        onUploadSuccess(data.doc_id, selectedFile.name);
-        setSelectedFile(null);
-        setUploadProgress(0);
+        onUploadSuccess(data.doc_id, file.name);
       }, 500);
     } catch (error) {
       clearInterval(progressInterval);
-      onUploadError(error instanceof Error ? error.message : 'Failed to upload PDF');
       setUploadProgress(0);
-    } finally {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to connect to server';
+      setError(errorMessage);
+      onUploadError(errorMessage);
       setIsUploading(false);
     }
   };
 
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      uploadFile(acceptedFiles[0]);
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'application/pdf': ['.pdf'] },
+    maxFiles: 1,
+    disabled: isUploading,
+  });
+
   return (
-    <div className="w-full max-w-2xl mx-auto animate-slide-up">
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`
-          relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300 metallic-card
-          ${isDragging 
-            ? 'border-neon-green/80 shadow-neon-light scale-[1.02]' 
-            : 'border-gray-700 hover:border-neon-green/50'
-          }
-          ${isUploading 
-            ? 'pointer-events-none opacity-70' 
-            : 'cursor-pointer'
-          }
-        `}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf"
-          onChange={handleFileInputChange}
-          className="hidden"
-        />
+    <div className="flex-1 flex items-center justify-center bg-background p-6 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 dark:bg-primary/15 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-accent/10 dark:bg-accent/15 rounded-full blur-3xl animate-float-delayed" />
+      </div>
 
-        <div className="flex flex-col items-center gap-4 text-center">
-          
-          {/* Neon Icon Container */}
-          <div className="w-16 h-16 rounded-full bg-neon-green/20 border border-neon-green/50 flex items-center justify-center shadow-neon-light animate-pulse-slow">
-            <Upload className="w-8 h-8 text-neon-green neon-text-glow" />
-          </div>
-
-          <div>
-            {/* Styled with neon glow */}
-            <h3 className="text-xl font-extrabold text-white mb-1 neon-text-glow">
-              VECTOR ENCODING INPUT
-            </h3>
-            {/* Accent line */}
-            <p className="text-sm text-gray-400 border-b border-neon-green/30 inline-block px-2 pb-1">
-              Drag & Drop PDF or select file for ingestion.
-            </p>
-          </div>
-
-          {/* Browse Files Button: Styled as a secondary metallic button */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="mt-2 px-6 py-3 metallic-card text-gray-300 rounded-xl font-semibold shadow-lg hover:shadow-neon-light transform hover:scale-105 transition-all duration-300 border border-gray-700 hover:border-cyan-400"
-          >
-            SELECT LOCAL FILE
-          </button>
-        </div>
-
-        {selectedFile && (
-          // File Preview: Styled as a distinct metallic card
-          <div className="mt-6 p-4 rounded-xl border border-neon-green/40 bg-card-surface/70 shadow-lg shadow-neon-green/10">
-            <div className="flex items-center gap-3 mb-3">
-              <FileText className="w-5 h-5 text-cyan-400 neon-text-glow" />
-              <span className="text-sm text-white flex-1 truncate font-medium">
-                {selectedFile.name}
-              </span>
-              <span className="text-xs text-neon-green">
-                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-              </span>
+      <div className="relative z-10 w-full max-w-2xl animate-fade-in-up">
+        <div className="glass-card rounded-[2.5rem] p-12 shadow-2xl space-y-8 border border-border/50">
+          <div className="text-center space-y-5">
+            <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center shadow-2xl shadow-primary/20 hover-lift ios-scale">
+              <FileText className="w-12 h-12 text-white" />
             </div>
+            <div>
+              <h2 className="text-4xl font-display font-bold gradient-text text-glow mb-3 tracking-tight">Upload Your Document</h2>
+              <p className="text-muted-foreground text-lg font-medium">
+                Drop your PDF here or click to browse
+              </p>
+            </div>
+          </div>
 
-            {/* Progress Bar */}
-            {uploadProgress > 0 && (
-              <div className="mb-4">
-                <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-cyan-400 to-neon-green transition-all duration-300 shadow-lg shadow-cyan-400/50"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <p className="text-xs font-mono text-neon-green mt-1 text-right neon-text-glow">
-                  {uploadProgress}%
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-3xl p-16 text-center ios-transition cursor-pointer ${
+              isDragActive
+                ? 'border-primary bg-primary/10 dark:bg-primary/5 scale-[1.02] shadow-lg shadow-primary/10'
+                : 'border-border hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10'
+            } ${error ? 'border-destructive bg-destructive/5' : ''}`}
+          >
+            <input {...getInputProps()} />
+            <div className="space-y-6">
+              <div className={`w-20 h-20 mx-auto rounded-3xl flex items-center justify-center ios-transition shadow-lg ${
+                isDragActive 
+                  ? 'bg-gradient-to-br from-primary/20 to-accent/20 scale-110' 
+                  : 'glass-card hover:scale-105'
+              }`}>
+                <Upload className={`w-9 h-9 ios-transition ${
+                  isDragActive ? 'text-primary animate-bounce-subtle' : 'text-primary'
+                }`} />
+              </div>
+              <div>
+                <p className="text-xl font-display font-bold text-foreground mb-2 tracking-tight">
+                  {isDragActive ? 'Drop your PDF here' : 'Drag & drop your PDF'}
+                </p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  or click to select a file from your device
                 </p>
               </div>
-            )}
-
-            {/* Upload Button: Primary Neon Green Style */}
-            <button
-              onClick={handleUpload}
-              disabled={isUploading}
-              className="w-full px-4 py-3 bg-neon-green hover:bg-white text-neon-black rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-neon-light disabled:bg-gray-700 disabled:text-gray-400"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span className="text-neon-black">Processing Data...</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-5 h-5" />
-                  Initiate RAG Ingestion
-                </>
-              )}
-            </button>
+            </div>
           </div>
-        )}
+
+          {error && (
+            <div className="flex items-center gap-3 p-5 rounded-2xl glass-card border border-destructive/30 bg-destructive/5 animate-fade-in-up">
+              <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
+              <p className="text-sm text-destructive font-medium">{error}</p>
+            </div>
+          )}
+
+          {isUploading && uploadProgress > 0 && (
+            <div className="space-y-4 animate-fade-in-up">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground font-semibold flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary animate-pulse-glow" />
+                  Processing your document...
+                </span>
+                <span className="text-foreground font-bold text-base">{uploadProgress}%</span>
+              </div>
+              <div className="h-3 bg-muted/50 rounded-full overflow-hidden backdrop-blur-sm">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-accent ios-transition relative"
+                  style={{ width: `${uploadProgress}%` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Button
+            onClick={() => document.querySelector('input[type="file"]')?.dispatchEvent(new MouseEvent('click'))}
+            disabled={isUploading}
+            size="lg"
+            variant="premium"
+            className="w-full text-lg h-16 rounded-2xl ios-scale font-bold tracking-wide"
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                Processing Document...
+              </>
+            ) : (
+              <>
+                <FileText className="w-5 h-5 mr-3" />
+                Select PDF File
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+import { ExternalLink, FileText } from 'lucide-react';
+import { Button } from '../components/ui/button';
 
 interface PDFViewerProps {
   docId: string;
@@ -5,31 +7,44 @@ interface PDFViewerProps {
 }
 
 export function PDFViewer({ docId, filename }: PDFViewerProps) {
-  // The backend stores uploaded files as uploads/{docId}_{filename}
   const safeUrl = `http://localhost:8000/uploads/${encodeURIComponent(docId + '_' + filename)}`;
 
   return (
-    <div className="h-full w-full flex flex-col">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-800/60">
-        <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{filename}</h3>
+    <div className="h-full w-full flex flex-col bg-background/30">
+      {/* Header */}
+      <div className="flex items-center justify-between px-8 py-5 border-b border-border glass-border">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border border-primary/30">
+            <FileText className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-display text-base font-semibold text-foreground">{filename}</h3>
+            <p className="text-xs text-muted-foreground font-medium">Active Document</p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          asChild
+          className="gap-2 font-display"
+        >
           <a
             href={safeUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-blue-600 dark:text-blue-400 underline"
           >
-            Open raw
+            <ExternalLink className="w-4 h-4" />
+            Open External
           </a>
-        </div>
-        <div className="text-xs text-gray-500 dark:text-gray-400">Preview</div>
+        </Button>
       </div>
 
-      <div className="flex-1 overflow-auto">
+      {/* PDF Viewer */}
+      <div className="flex-1 overflow-hidden bg-muted/5 backdrop-blur-sm">
         <iframe
           title={`pdf-${docId}`}
           src={safeUrl}
-          className="w-full h-full"
+          className="w-full h-full border-0"
         />
       </div>
     </div>

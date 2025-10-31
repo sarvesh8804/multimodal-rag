@@ -1,0 +1,41 @@
+@layer components {
+  .markdown-content {
+    @apply prose prose-invert max-w-none;
+  }
+
+  .markdown-content ul {
+    @apply space-y-1 list-disc pl-4 mb-4;
+  }
+
+  .markdown-content ul ul {
+    @apply mt-1 mb-0;
+  }
+
+  .markdown-content li {
+    @apply text-foreground/90 marker:text-primary;
+  }
+
+  .markdown-content p {
+    @apply mb-4 last:mb-0 text-foreground/90;
+  }
+
+  .markdown-content strong {
+    @apply text-foreground font-semibold;
+  }
+
+  .markdown-content hr {
+    @apply my-6 border-border;
+  }
+
+  .markdown-content table {
+    @apply w-full my-4 border-collapse;
+  }
+
+  .markdown-content table th {
+    @apply bg-muted/50 px-4 py-2 text-left font-semibold border border-border;
+  }
+
+  .markdown-content table td {
+    @apply px-4 py-2 border border-border;
+  }
+}
