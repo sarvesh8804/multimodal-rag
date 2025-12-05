@@ -8,7 +8,7 @@ interface HomepageProps {
 
 export function Homepage({ onGetStarted }: HomepageProps) {
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex-1">
+    <div className="min-h-screen bg-background relative overflow-y-auto flex-1">
       {/* Animated gradient background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 dark:bg-primary/20 rounded-full blur-3xl animate-float" />
@@ -122,7 +122,7 @@ export function Homepage({ onGetStarted }: HomepageProps) {
             natural language processing to deliver unparalleled accuracy.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            {['GPT-4', 'Vector Embeddings', 'Semantic Search', 'RAG Architecture', 'Real-time Processing', 'Enterprise Security'].map((tech) => (
+            {['Gemini-pro', 'Qdrant Vector Embeddings', 'Semantic Search', 'Hybrid MRAG Architecture', 'Real-time Processing'].map((tech) => (
               <div
                 key={tech}
                 className="px-6 py-3 glass-card rounded-2xl text-sm font-semibold text-foreground hover:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10 ios-transition hover-lift ios-scale"

@@ -99,7 +99,7 @@ const Index = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background ios-transition">
+    <div className="min-h-screen flex flex-col bg-background ios-transition overflow-auto">
       <ThemeToggle />
       <ToastContainer toasts={toasts} onClose={removeToast} />
       
