@@ -28,6 +28,8 @@ load_dotenv()
 
 IMAGE_MODEL_NAME = "gemini-2.5-flash"
 TEXT_MODEL_NAME = "gemini-2.5-flash"
+# IMAGE_MODEL_NAME = "gemma-3-27b"
+# TEXT_MODEL_NAME = "gemma-3-27b"
 
 IMAGE_API_KEY = os.getenv("GEMINI_API")
 TEXT_API_KEY = os.getenv("GEMINI_API_NEW")
@@ -67,7 +69,17 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ------------------------------------------------------------
 # DATA MODELS
+
 # ------------------------------------------------------------
+
+
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+
+class Source(BaseModel):
+    page: int
+    text: str
+
 class QueryRequest(BaseModel):
     doc_id: str
     query: str
@@ -75,7 +87,7 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str
-    context: List[Dict[str, Any]]
+    source: Optional[Source]
 
 # ------------------------------------------------------------
 # UTILITY FUNCTIONS
@@ -251,14 +263,34 @@ async def query_doc(req: QueryRequest):
         retrieval_time = (time.time() - start_retrieval) * 1000
 
         context, context_text, retrieved_ids = [], "", []
-        for h in hits:
+        best_hit = None  # 🌟 NEW: To store the highest scoring chunk
+        
+        for i, h in enumerate(hits):
+            # 🌟 NEW: Track the best hit based on score (Qdrant results are often sorted by score already)
+            if best_hit is None or h.score > best_hit.score:
+                best_hit = h
+            
             pid = getattr(h, "id", len(retrieved_ids))
             payload = h.payload
+            # Note: keeping the full context list for logging/evaluation, but only using best_hit for frontend
             context.append({"id": pid, "page": payload.get("page"), "text": payload.get("text"), "score": h.score})
             context_text += f"\n(Page {payload.get('page')}) {payload.get('text')}"
             retrieved_ids.append(pid)
+        
+        # 🌟 NEW: Format the single best source object for the frontend
+        best_source_payload = None
+        if best_hit:
+            best_source_payload = best_hit.payload
+            # Extract only page and a snippet of text for the frontend
+            best_source = {
+                "page": best_source_payload.get("page"),
+                # Truncate text to a reasonable length for the source snippet in the UI
+                "text": best_source_payload.get("text")[:100].strip() + "..." if best_source_payload.get("text") and len(best_source_payload.get("text")) > 100 else best_source_payload.get("text")
+            }
+
 
         # Generate response
+        # ... (rest of the generation code is unchanged) ...
         genai.configure(api_key=TEXT_API_KEY)
         flash_model = genai.GenerativeModel(model_name=TEXT_MODEL_NAME)
 
@@ -276,30 +308,12 @@ Query:
         generation_time = (time.time() - start_gen) * 1000
         total_time = (time.time() - start_total) * 1000
 
-        # ✅ Accurate Evaluation using new metrics.py
-        ground_truth = 'The company\'s performance overview details robust revenue growth from 1996 to 1999, led by Licenses (18 SEK m to 83 SEK m), with strong growth also in Service contracts and Hardware. Product-wise, "FORMS" generated substantially higher license revenues than "INVOICES." The majority of license income comes from Europe (61%) and Sweden (23%). Strategically, the company covers an estimated 70% of the world market, with US sales organizations and plans to expand to Japan and another Asian market, using direct sales and distributors for local control. The Automatic Data Capture Market is described as young, growing, and largely untapped; its key customer benefits include reduced costs, increased accuracy, and shorter entry times'  # If testing, you can provide expected answer here
-        metrics = evaluate_answer(
-            query=req.query,
-            answer=response.text,
-            ground_truth=ground_truth,
-            retrieved_docs=[c["text"] for c in context],
-            relevant_ids=[],  # If known
-            retrieved_ids=retrieved_ids
-        )
 
-        # Add timing to logs
-        metrics["Retrieval(ms)"] = round(retrieval_time, 2)
-        metrics["Generation(ms)"] = round(generation_time, 2)
-        metrics["Total(ms)"] = round(total_time, 2)
-
-        log_metrics(req.query, response.text, metrics)
-
-        print("\n===== QUERY EVALUATION METRICS =====")
-        for k, v in metrics.items():
-            print(f"{k}: {v}")
-        print("=====================================\n")
-
-        return {"answer": response.text, "context": context}
+       
+        return {
+            "answer": response.text, 
+            "source": best_source if best_source_payload else None
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")

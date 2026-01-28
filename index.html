@@ -2,107 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FastAPI RAG Chat UI</title>
-    <style>
-    /* ------------------------------------------------------------------- */
-    /* 1. BACKGROUND TEXTURE (Deep, Rich Black with Subtle Grid) */
-    /* ------------------------------------------------------------------- */
-    .bg-textured-dark-final {
-        background-color: #030303; /* Deeper black */
-        background-image: 
-            /* Subtle grid/dot pattern for texture */
-            radial-gradient(circle at 50% 50%, rgba(30, 30, 30, 0.4) 1px, transparent 1px),
-            linear-gradient(to right, rgba(20, 20, 20, 0.3) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(20, 20, 20, 0.3) 1px, transparent 1px);
-        background-size: 40px 40px;
-    }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <title>MRAG System - Multi-Modal RAG Assistant</title>
+    <meta name="description" content="Advanced Multi-Modal Retrieval-Augmented Generation system powered by AI and vector search. Upload documents and get intelligent, context-aware answers." />
+    <meta name="author" content="MRAG System" />
 
-    /* ------------------------------------------------------------------- */
-    /* 2. ENHANCED METALLIC CARD (Metallic depth and reflective light) */
-    /* ------------------------------------------------------------------- */
-    .metallic-card-final {
-        /* Layered background for depth */
-        background: linear-gradient(135deg, #121212 0%, #0A0A0A 100%);
-        /* Complex Box Shadow for the premium, recessed metallic look */
-        box-shadow: 
-            /* Outer deep shadow for lift */
-            0 15px 40px rgba(0, 0, 0, 0.8),
-            /* Inner top highlight (simulating reflected light) */
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            /* Inner bottom shadow (simulating recession) */
-            inset 0 -1px 3px rgba(0, 0, 0, 0.8);
-        border: 1px solid #282828; /* Thin, soft border */
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    }
+    <meta property="og:title" content="MRAG System - Multi-Modal RAG Assistant" />
+    <meta property="og:description" content="Advanced Multi-Modal Retrieval-Augmented Generation system powered by AI and vector search" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
-    .metallic-card-final:hover {
-        transform: translateY(-4px);
-        border-color: #00FF80; /* Neon green edge highlight */
-        /* Intense, focused outer glow */
-        box-shadow: 
-            0 20px 50px rgba(0, 0, 0, 1), 
-            0 0 25px rgba(0, 255, 128, 0.7); 
-    }
-
-    /* ------------------------------------------------------------------- */
-    /* 3. NEON GLOW EFFECTS (Sharp and concentrated light) */
-    /* ------------------------------------------------------------------- */
-    .neon-glow-final {
-        text-shadow: 
-            0 0 8px #00FF80, 
-            0 0 16px #00FF8099, 
-            0 0 24px rgba(0, 255, 128, 0.5); 
-    }
-
-    /* Utility to add a subtle light-source reflection to the top edge */
-    .top-edge-light::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent 5%, rgba(255, 255, 255, 0.2) 50%, transparent 95%);
-    }
-
-    /* Utility for a clean, white-to-gray title gradient */
-    .app-title-gradient {
-        background: linear-gradient(90deg, #FFFFFF 50%, #C0C0C0 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        color: transparent;
-        letter-spacing: 0.05em;
-    }
-</style>
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    'neon-black': '#050505', 
-                    'neon-green': '#00FF80', 
-                    'card-surface': '#1A1A1A', 
-                    'card-highlight': '#252525',
-                },
-                fontFamily: {
-                    sans: ['Inter', 'sans-serif'],
-                },
-                boxShadow: {
-                    // This is crucial for the glow effects
-                    'neon-light': '0 0 10px rgba(0, 255, 128, 0.4)', 
-                }
-            }
-        }
-    }
-</script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
   </body>
 </html>
