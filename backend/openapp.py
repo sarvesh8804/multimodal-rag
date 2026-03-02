@@ -41,7 +41,7 @@ UPLOAD_DIR = "uploads"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-VISION_MODEL = "google/gemma-3-12b-it:free"
+VISION_MODEL = "google/gemma-3-4b-it:free"
 TEXT_MODEL = "google/gemma-3-4b-it:free"
 
 openrouter_client = OpenAI(
